@@ -11,6 +11,7 @@ import re
 import time
 import os
 
+
 class Agent():
     def __init__(self):
         self.landing = 'https://covid19.ontariohealth.ca/'
@@ -63,9 +64,9 @@ class Agent():
             # extract time remaining
             this_wait = [int(s) for s in estimated.split() if s.isdigit()]
             if this_wait:
-                this_wait = this_wait[0] * 60 + 60  # convert to seconds, add a minute buffer
+                this_wait = this_wait[0] * 60  # convert to seconds
             else:
-                this_wait = 60  # less than a minute remaining, wait for a minute
+                this_wait = 30  # less than a minute remaining, wait for a minute
 
             # wait
             print('Waiting for {0} seconds!'.format(this_wait))
@@ -130,7 +131,6 @@ class Agent():
         for character in input:
             elm.send_keys(character)
             time.sleep(self.wait_s/10)
-
 
 
     def run(self):
