@@ -9,12 +9,16 @@ from webdriver_manager.chrome import ChromeDriverManager
 import json
 import re
 import time
+import os
+
+# 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
 
 class Agent():
     def __init__(self):
         self.landing = 'https://covid19.ontariohealth.ca/'
         self.wait_s = 5  # adjust to latency, in seconds
 
+        self.w_d = os.path.dirname(os.path.realpath(__file__))
         with open('{0}/config.json'.format(self.w_d)) as f:
             self.config = json.load(f)
     
@@ -65,7 +69,12 @@ class Agent():
             else:
                 this_wait = 60  # less than a minute remaining, wait for a minute
 
-            time.sleep(this_wait)  # wait
+            # wait
+            print('Waiting for {0} seconds!'.format(this_wait))
+            for second in range(this_wait, 0, -1):
+                if second%30 == 0:
+                    print('About {0} seconds left!'.format(second))
+                time.sleep(1)
 
 
     def fill_info(self):
@@ -77,17 +86,27 @@ class Agent():
         pattern = re.compile('[\W_]+')
 
         # FILL INFO
-        # fill health card number
-        WebDriverWait(self.driver, self.wait_s).until(
+        hcn = WebDriverWait(self.driver, self.wait_s).until(
             EC.presence_of_element_located((By.ID, "hcn"))
-        ).send_keys(pattern.sub('', self.config['health_card_number'].lower()))
-        self.driver.find_element_by_id("vcode").send_keys(pattern.sub('', self.config['version_code'].lower()))  # fill version code
-        self.driver.find_element_by_id("scn").send_keys(pattern.sub('', self.config['back_code'].lower()))  # fill code on back of card
-        self.driver.find_element_by_id("dob").send_keys(pattern.sub('', self.config['dob'].lower()))  # fill date of birth
-        self.driver.find_element_by_id("postal").send_keys(pattern.sub('', self.config['postal_code'].lower()))  # fill postal code
+        )
+        self.staggered_type(hcn, pattern.sub('', self.config['health_card_number'].lower()))  # fill health card number
+        time.sleep(self.wait_s/5)  # buffer
+
+        self.staggered_type(self.driver.find_element_by_id("vcode"), pattern.sub('', self.config['version_code'].lower()))  # fill version code
+        time.sleep(self.wait_s/5)  # buffer
+
+        self.staggered_type(self.driver.find_element_by_id("scn"), pattern.sub('', self.config['back_code'].lower()))  # fill code on back of card
+        time.sleep(self.wait_s/5)  # buffer
+
+        self.staggered_type(self.driver.find_element_by_id("dob"), pattern.sub('', self.config['dob'].lower()))  # fill date of birth
+        time.sleep(self.wait_s/5)  # buffer
+
+        self.staggered_type(self.driver.find_element_by_id("postal"), pattern.sub('', self.config['postal_code'].lower()))  # fill postal code
+        time.sleep(self.wait_s/5)  # buffer
 
         self.driver.find_element_by_id("continue_button").click()  # continue
         print('Info filled!')
+
 
     def check_error(self):
         '''
@@ -104,10 +123,21 @@ class Agent():
         except TimeoutException:
             return False
     
-    def run(self):
 
+    def staggered_type(self, elm, input):
+        '''
+        elm as typeable selenium field element
+        input as string input to type into elm
+        '''
+        for character in input:
+            elm.send_keys(character)
+            time.sleep(self.wait_s/10)
+
+
+
+    def run(self):
+        self.init_driver()
         while True:
-            self.init_driver()
             self.queue_up()
             self.wait_queue()
             self.fill_info()
