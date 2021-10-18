@@ -11,8 +11,6 @@ import re
 import time
 import os
 
-# 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
-
 class Agent():
     def __init__(self):
         self.landing = 'https://covid19.ontariohealth.ca/'
